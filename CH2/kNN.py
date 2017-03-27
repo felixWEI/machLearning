@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+'''
+个人理解的kNN近邻算法：已知的数据集以及样本的标签作为训练数据来充当分类器
+另外有一些数据集以及标签作为测试数据检验分类器的错误率。测试数据的判断是以数据k个最近邻点的标签来判断数据集所对应的标签
+'''
+import os
 from numpy import *
 import operator
 import matplotlib
@@ -55,6 +60,44 @@ def autoNorm(dataSet):
     normDataSet = dataSet - tile(minVals, (m,1))
     normDataSet = dataSet / tile(ranges, (m,1))
     return normDataSet, ranges, minVals
+def img2Vector(filename):
+    #主要作用是将32*32的像素转化成1*1024的向量。这样就能复用classify0分类器
+    fileObj = open(filename)
+    returnMat = zeros((1,1024))
+    for i, eachLine in enumerate(fileObj):
+        for j in range(32):
+            returnMat[0,32*i+j] = int(eachLine[j])
+    return returnMat
+
+def handWriteClassTest():
+    #测试kNN方法
+    trainingDigitDir = os.path.join(os.getcwd(), r'digits\trainingDigits')
+    trainingSetList = os.listdir(trainingDigitDir)
+    #print trainingSetList
+    m = len(trainingSetList)
+    hwLabels = []
+    hwTrainingMat = zeros((m,1024))
+    for fileIndex,eachItem in enumerate(trainingSetList):
+        hwLabels.append(eachItem.split('.')[0].split('_')[0])
+        filePath = os.path.join(trainingDigitDir, eachItem)
+        oneHwTrainingSet = img2Vector(filePath)
+        hwTrainingMat[fileIndex,:] = oneHwTrainingSet
+    #print hwLabels
+
+    testingDigitDir = os.path.join(os.getcwd(), r'digits\testDigits')
+    testingSetList = os.listdir(testingDigitDir)
+    n = len(testingSetList)
+    errorCount = 0.0
+    for fileIndex, eachItem in enumerate(testingSetList):
+        fileNameStr = eachItem.split('.')[0].split('_')[0]#真实的label
+        filePath = os.path.join(testingDigitDir, eachItem)
+        oneHwTestingArray = img2Vector(filePath)
+        #print eachItem
+        classifyResult = classify0(oneHwTestingArray,hwTrainingMat,3,hwLabels)
+        if classifyResult != fileNameStr:#分类器获得的label与真实label做比较计算错误数量
+            print 'classifyResult:{} hwLabels:{}'.format(classifyResult, hwLabels[fileIndex])
+            errorCount += 1
+    print 'Error Rate: {}'.format(errorCount/float(n))
 
 def datingClassTest():
     #取前10%的数据做测试样本，后面90%为训练样本
@@ -122,7 +165,8 @@ def Main1():
     plt.show()
 
 def Main2():
-    classifyPerson()
+    #print img2Vector(r'C:\Users\felix\Documents\machLearning\CH2\digits\trainingDigits\0_0.txt')
+    handWriteClassTest()
 
 if __name__ == '__main__':
 
